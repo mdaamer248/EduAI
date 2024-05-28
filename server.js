@@ -1,23 +1,17 @@
-const express = require("express");
-const cors = require("cors");
-// const db = require("./Database/database");
-
-db = require("./Database/database");
-const routes = require("./router");
+import express from "express";
+import cors from "cors";
+import pkg from "body-parser";
+import { courseRouter } from "./router.js";
 
 const app = express();
+const { json } = pkg;
 
+app.use(json());
 app.use(cors());
-app.use("/api", routes);
-
-try {
-  db.connect();
-} catch (error) {
-  console.error(error);
-}
+app.use("/api", courseRouter);
 
 app.listen(3000, () => {
   console.log("Server listening on port 3000");
 });
 
-module.exports = app;
+export default app;

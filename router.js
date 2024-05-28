@@ -1,18 +1,21 @@
-const express = require("express");
-const mssql = require("mssql");
-const db = require("./Database/database");
-const router = express.Router();
+import { Router } from "express";
+import { dbConnect } from "./Database/database.js";
+import { parseLessonData, parseOutLine } from "./parseLesson.js";
+import pkg from "mssql";
+const { Int, SmallInt, NVarChar, VarChar, Decimal, SmallDateTime } = pkg;
 
+const router = Router();
+// Create a connection pool
+const pool = await dbConnect();
+
+/// Get Course Details
 router.get("/syllabus/course/:courseId", async (req, res) => {
   try {
     const courseId = req.params.courseId;
 
-    // Create a connection pool
-    const pool = await db.connect();
-
     const result = await pool
       .request()
-      .input("courseId", mssql.Int, courseId)
+      .input("courseId", Int, courseId)
       .query("SELECT * FROM admin_syllabusCourse WHERE SylabusID = @courseId");
 
     if (result.recordset.length === 0) {
@@ -28,45 +31,15 @@ router.get("/syllabus/course/:courseId", async (req, res) => {
   }
 });
 
-router.get("/get/all/lessons/:courseId", async (req, res) => {
-  try {
-    const courseId = req.params.courseId;
-
-    // Create a connection pool
-    const pool = await db.connect();
-
-    // Execute the query using the connection pool
-    const result = await pool
-      .request()
-      .input("courseId", mssql.Int, courseId)
-      .query("SELECT * FROM admin_syllabusLesson WHERE SyllabusID = @courseId");
-
-    // Check if any rows were returned
-    if (result.recordset.length === 0) {
-      res.status(404).json({ message: "No lessons found for this course id." });
-    } else {
-      res.json(result.recordset);
-    }
-  } catch (err) {
-    console.error("Error retrieving lessons:", err);
-    res
-      .status(500)
-      .json({ message: "Error retrieving lessons", error: err.message });
-  }
-});
-
-// READ: Get all syllabus Notes for a given course ID
+// Get Course Notes
 router.get("/syllabus/notes/:courseId", async (req, res) => {
   try {
     const courseId = req.params.courseId;
 
-    // Create a connection pool
-    const pool = await db.connect();
-
     // Execute the query using the connection pool
     const result = await pool
       .request()
-      .input("courseId", mssql.Int, courseId)
+      .input("courseId", Int, courseId)
       .query("SELECT * FROM admin_syllabusNotes WHERE SylabusID = @courseId");
 
     // Check if any rows were returned
@@ -85,4 +58,191 @@ router.get("/syllabus/notes/:courseId", async (req, res) => {
   }
 });
 
-module.exports = router;
+// Get Outline
+router.get("/get/all/modules/:courseId", async (req, res) => {
+  try {
+    const courseId = req.params.courseId;
+
+    // Execute the query using the connection pool
+    const result = await pool
+      .request()
+      .input("courseId", Int, courseId)
+      .query("SELECT * FROM admin_syllabusLesson WHERE SyllabusID = @courseId");
+
+    const formattedData = [];
+    if (result.recordset.length === 0) {
+      res.status(404).json({ message: "No lessons found for this course id." });
+    } else {
+      result.recordset.forEach((data) => {
+        if (data.ModuleNo && data.LessonID) {
+          formattedData.push({
+            moduleNo: data.ModuleNo,
+            moduleTitle: data.ModuleTitle,
+            info: parseOutLine(data.infoList),
+          });
+        }
+      });
+      res.json(formattedData);
+    }
+  } catch (err) {
+    console.error("Error retrieving lessons:", err);
+    res
+      .status(500)
+      .json({ message: "Error retrieving lessons", error: err.message });
+  }
+});
+
+// Get LessonPlan
+router.get("/get/all/lessons/:courseId", async (req, res) => {
+  try {
+    const courseId = req.params.courseId;
+
+    // Execute the query using the connection pool
+    const result = await pool
+      .request()
+      .input("courseId", Int, courseId)
+      .query("SELECT * FROM admin_syllabusLesson WHERE SyllabusID = @courseId");
+
+    const formattedData = [];
+    if (result.recordset.length === 0) {
+      res.status(404).json({ message: "No lessons found for this course id." });
+    } else {
+      result.recordset.forEach((data) => {
+        if (data.ModuleNo && data.LessonID) {
+          formattedData.push({
+            syllabusId: data.SyllabusID,
+            displayGroup: data.displayGroup,
+            lessonId: data.LessonID,
+            moduleNo: data.ModuleNo,
+            moduleTitle: data.ModuleTitle,
+            info: parseLessonData(data.infoList),
+          });
+        }
+      });
+      res.json(formattedData);
+    }
+  } catch (err) {
+    console.error("Error retrieving lessons:", err);
+    res
+      .status(500)
+      .json({ message: "Error retrieving lessons", error: err.message });
+  }
+});
+
+// Add a topic inside course notes section
+router.post("/syllabus/notes", async (req, res) => {
+  try {
+    // Create a connection pool
+    const request = pool.request();
+
+    const {
+      SylabusID,
+      NotesID,
+      NotesModule,
+      NotesNo,
+      NotesTitle,
+      NotesDescription,
+      DisplayIsStudent,
+      DisplayIsInstructor,
+      DisplayIsDeveloper,
+    } = req.body;
+
+    const result = await request
+      .input("SylabusID", Int, SylabusID)
+      .input("NotesID", Int, NotesID)
+      .input("NotesModule", SmallInt, NotesModule)
+      .input("NotesNo", Int, NotesNo)
+      .input("NotesTitle", NVarChar, NotesTitle)
+      .input("NotesDescription", NVarChar, NotesDescription)
+      .input("DisplayIsStudent", VarChar, DisplayIsStudent)
+      .input("DisplayIsInstructor", VarChar, DisplayIsInstructor)
+      .input("DisplayIsDeveloper", VarChar, DisplayIsDeveloper).query(`
+          INSERT INTO admin_syllabusNotes (SylabusID, NotesID, NotesModule, NotesNo, NotesTitle, NotesDescription, DisplayIsStudent, DisplayIsInstructor, DisplayIsDeveloper)
+          VALUES (@SylabusID, @NotesID, @NotesModule, @NotesNo, @NotesTitle, @NotesDescription, @DisplayIsStudent, @DisplayIsInstructor, @DisplayIsDeveloper)
+        `);
+
+    console.log({ result });
+
+    res.status(201).send({ message: "Syllabus note added successfully" });
+  } catch (error) {
+    console.error("Error creating notes:", error);
+    res
+      .status(500)
+      .json({ message: "Error creating notes", error: error.message });
+  }
+});
+
+router.post("/add/course", async (req, res) => {
+  try {
+    const {
+      SylabusID,
+      CourseNo,
+      CourseTitle,
+      LectureClipURL,
+      sVersion,
+      UpdateOn,
+      CardFrame,
+      CardImage,
+      CardDifficulty,
+      CardLevel,
+      CardCategory,
+      CardStatus,
+      TotalModule,
+      TotalLesson,
+      TotalNotes,
+      TotalCoursework,
+      TotalAssignments,
+      TotalExam,
+      TotalPractice,
+      TotalDiagnostic,
+    } = req.body;
+
+    // Create a new request
+    const request = pool.request();
+
+    // Insert data into admin_syllabusCourse
+    const result = await request
+      .input("SylabusID", Int, SylabusID)
+      .input("CourseNo", NVarChar, CourseNo)
+      .input("CourseTitle", NVarChar, CourseTitle)
+      .input("LectureClipURL", NVarChar, LectureClipURL)
+      .input("sVersion", Decimal(18, 2), sVersion)
+      .input("UpdateOn", SmallDateTime, UpdateOn)
+      .input("CardFrame", NVarChar, CardFrame)
+      .input("CardImage", NVarChar, CardImage)
+      .input("CardDifficulty", Int, CardDifficulty)
+      .input("CardLevel", Int, CardLevel)
+      .input("CardCategory", NVarChar, CardCategory)
+      .input("CardStatus", VarChar, CardStatus)
+      .input("TotalModule", Int, TotalModule)
+      .input("TotalLesson", Int, TotalLesson)
+      .input("TotalNotes", Int, TotalNotes)
+      .input("TotalCoursework", Int, TotalCoursework)
+      .input("TotalAssignments", Int, TotalAssignments)
+      .input("TotalExam", Int, TotalExam)
+      .input("TotalPractice", Int, TotalPractice)
+      .input("TotalDiagnostic", Int, TotalDiagnostic).query(`
+        INSERT INTO admin_syllabusCourse (
+          SylabusID, CourseNo, CourseTitle, LectureClipURL, sVersion, UpdateOn, CardFrame, CardImage, CardDifficulty,
+          CardLevel, CardCategory, CardStatus, TotalModule, TotalLesson, TotalNotes, TotalCoursework,
+          TotalAssignments, TotalExam, TotalPractice, TotalDiagnostic
+        )
+        VALUES (
+          @SylabusID, @CourseNo, @CourseTitle, @LectureClipURL, @sVersion, @UpdateOn, @CardFrame, @CardImage, @CardDifficulty,
+          @CardLevel, @CardCategory, @CardStatus, @TotalModule, @TotalLesson, @TotalNotes, @TotalCoursework,
+          @TotalAssignments, @TotalExam, @TotalPractice, @TotalDiagnostic
+        )
+      `);
+
+    console.log({ result });
+
+    res.status(201).send({ message: "Syllabus course added successfully" });
+  } catch (error) {
+    console.error("SQL error", error);
+    res
+      .status(500)
+      .send({ error: "An error occurred while adding the syllabus course" });
+  }
+});
+
+export const courseRouter = router;
