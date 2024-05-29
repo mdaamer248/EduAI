@@ -172,6 +172,57 @@ router.post("/syllabus/notes", async (req, res) => {
   }
 });
 
+// Endpoint to update a course note
+router.put("/syllabus/notes/:NotesID", async (req, res) => {
+  try {
+    const request = pool.request();
+
+    const { NotesID } = req.params;
+    const {
+      SylabusID,
+      NotesModule,
+      NotesNo,
+      NotesTitle,
+      NotesDescription,
+      DisplayIsStudent,
+      DisplayIsInstructor,
+      DisplayIsDeveloper,
+    } = req.body;
+
+    const result = await request
+      .input("SylabusID", Int, SylabusID)
+      .input("NotesModule", SmallInt, NotesModule)
+      .input("NotesNo", Int, NotesNo)
+      .input("NotesTitle", NVarChar, NotesTitle)
+      .input("NotesDescription", NVarChar, NotesDescription)
+      .input("DisplayIsStudent", VarChar, DisplayIsStudent)
+      .input("DisplayIsInstructor", VarChar, DisplayIsInstructor)
+      .input("DisplayIsDeveloper", VarChar, DisplayIsDeveloper)
+      .input("NotesID", Int, NotesID).query(`
+        UPDATE admin_syllabusNotes
+        SET 
+          SylabusID = @SylabusID,
+          NotesModule = @NotesModule,
+          NotesNo = @NotesNo,
+          NotesTitle = @NotesTitle,
+          NotesDescription = @NotesDescription,
+          DisplayIsStudent = @DisplayIsStudent,
+          DisplayIsInstructor = @DisplayIsInstructor,
+          DisplayIsDeveloper = @DisplayIsDeveloper
+        WHERE NotesID = @NotesID
+      `);
+
+    console.log({ result });
+
+    res.status(200).send({ message: "Syllabus note updated successfully" });
+  } catch (error) {
+    console.error("Error updating notes:", error);
+    res
+      .status(500)
+      .json({ message: "Error updating notes", error: error.message });
+  }
+});
+
 router.post("/add/course", async (req, res) => {
   try {
     const {
