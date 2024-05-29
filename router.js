@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { dbConnect } from "./Database/database.js";
 import { parseLessonData, parseOutLine } from "./parseLesson.js";
+import { formatLessons } from "./formatLesson.js";
 import pkg from "mssql";
 const { Int, SmallInt, NVarChar, VarChar, Decimal, SmallDateTime } = pkg;
 
@@ -107,6 +108,7 @@ router.get("/get/all/lessons/:courseId", async (req, res) => {
     if (result.recordset.length === 0) {
       res.status(404).json({ message: "No lessons found for this course id." });
     } else {
+      // res.json(result.recordset);
       result.recordset.forEach((data) => {
         if (data.ModuleNo && data.LessonID) {
           formattedData.push({
@@ -293,6 +295,90 @@ router.post("/add/course", async (req, res) => {
     res
       .status(500)
       .send({ error: "An error occurred while adding the syllabus course" });
+  }
+});
+
+// Endpoint to add a record to the admin_syllabusLesson table
+// Adding Module
+router.post("/syllabus/outline/module", async (req, res) => {
+  try {
+    const {
+      SyllabusID,
+      displayGroup,
+      LessonID,
+      ModuleNo,
+      ModuleTitle,
+      infoListProperties,
+    } = req.body;
+
+    const infoList = formatLessons(infoListProperties);
+
+    const result = await pool
+      .request()
+      .input("SyllabusID", Int, SyllabusID)
+      .input("displayGroup", NVarChar, displayGroup)
+      .input("LessonID", Int, LessonID)
+      .input("ModuleNo", Int, ModuleNo)
+      .input("ModuleTitle", NVarChar, ModuleTitle)
+      .input("infoList", NVarChar, infoList).query(`
+              INSERT INTO admin_syllabusLesson (SyllabusID, displayGroup, LessonID, ModuleNo, ModuleTitle, infoList)
+              VALUES (@SyllabusID, @displayGroup, @LessonID, @ModuleNo, @ModuleTitle, @infoList)
+          `);
+
+    res.status(201).send({ message: "Lesson added successfully", result });
+
+    // res.status(201).send({ message: "Lesson added successfully", infoList });
+  } catch (error) {
+    console.error("Error creating lesson:", error);
+    res
+      .status(500)
+      .json({ message: "Error creating lesson", error: error.message });
+  }
+});
+
+// Endpoint to add a record to the admin_syllabusLesson table
+router.post("/syllabus/lesson", async (req, res) => {
+  try {
+    const pool = await poolPromise;
+
+    const {
+      SyllabusID,
+      displayGroup,
+      LessonID,
+      ModuleNo,
+      ModuleTitle,
+      infoList,
+    } = req.body;
+
+    const {
+      lessonId,
+      lessonNo,
+      lessonTitle,
+      lessonDescription,
+      lessonIsStudent,
+      lessonIsInstructor,
+      lessonIsDeveloper,
+      hideDeleteLesson,
+    } = infoList;
+
+    const result = await pool
+      .request()
+      .input("SyllabusID", sql.Int, SyllabusID)
+      .input("displayGroup", sql.NVarChar, displayGroup)
+      .input("LessonID", sql.Int, LessonID)
+      .input("ModuleNo", sql.Int, ModuleNo)
+      .input("ModuleTitle", sql.NVarChar, ModuleTitle)
+      .input("infoList", sql.NVarChar, infoList).query(`
+              INSERT INTO admin_syllabusLesson (SyllabusID, displayGroup, LessonID, ModuleNo, ModuleTitle, infoList)
+              VALUES (@SyllabusID, @displayGroup, @LessonID, @ModuleNo, @ModuleTitle, @infoList)
+          `);
+
+    res.status(201).send({ message: "Lesson added successfully", result });
+  } catch (error) {
+    console.error("Error creating lesson:", error);
+    res
+      .status(500)
+      .json({ message: "Error creating lesson", error: error.message });
   }
 });
 

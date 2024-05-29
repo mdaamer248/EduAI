@@ -33,7 +33,7 @@ export const parseLessonData = (data) => {
       const lessonPlanIsStudent = lessonPlans[j + 10];
       const lessonPlanIsInstructor = lessonPlans[j + 11];
       const lessonPlanIsDeveloper = lessonPlans[j + 12];
-      const hideDeleteLplan = lessonPlans[j + 13];
+      const hideDeleteLPlan = lessonPlans[j + 13].replace(/hide\d*/, "hide");
 
       const parsedLessonData = {
         lessonPlanId,
@@ -49,7 +49,7 @@ export const parseLessonData = (data) => {
         lessonPlanIsStudent,
         lessonPlanIsInstructor,
         lessonPlanIsDeveloper,
-        hideDeleteLplan,
+        hideDeleteLPlan,
       };
 
       formattedLessonPlan.push(parsedLessonData);
