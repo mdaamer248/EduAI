@@ -76,11 +76,11 @@ export const parseLessonData = (data) => {
 };
 
 export const parseOutLine = (data) => {
-  const lessons = data.split("##").slice(1);
+  const lessons = data?.split("##").slice(1);
   const result = [];
 
   let i = 0;
-  while (i < lessons.length) {
+  while (i < lessons?.length) {
     const lessonNo = lessons[i + 1];
     const lessonTitle = lessons[i + 2];
     const lessonIsStudent = lessons[i + 4];
