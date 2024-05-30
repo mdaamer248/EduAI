@@ -14,10 +14,8 @@ export const parseLessonData = (data) => {
     const hideDeleteLesson = lessons[i + 7];
 
     const lessonPlanPart = lessons[i + 8];
-    console.log({ lessonPlanPart });
 
     const lessonPlans = lessonPlanPart?.split("@@").slice(1);
-    console.log({ lessonPlans });
 
     const formattedLessonPlan = [];
 

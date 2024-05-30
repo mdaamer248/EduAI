@@ -335,8 +335,8 @@ router.post("/syllabus/outline/module", async (req, res) => {
   }
 });
 
-// Adding Module
-router.post("/syllabus/outline/module/lesson", async (req, res) => {
+// Adding Lesson plans inside module
+router.post("/syllabus/outline/module/lessonPlans", async (req, res) => {
   try {
     const {
       SyllabusID,
@@ -357,11 +357,16 @@ router.post("/syllabus/outline/module/lesson", async (req, res) => {
       .input("ModuleNo", Int, ModuleNo)
       .input("ModuleTitle", NVarChar, ModuleTitle)
       .input("infoList", NVarChar, infoList).query(`
-              INSERT INTO admin_syllabusLesson (SyllabusID, displayGroup, LessonID, ModuleNo, ModuleTitle, infoList)
-              VALUES (@SyllabusID, @displayGroup, @LessonID, @ModuleNo, @ModuleTitle, @infoList)
+      UPDATE admin_syllabusLesson
+      SET infoList = @infoList
+      WHERE SyllabusID = @SyllabusID
+        AND displayGroup = @displayGroup
+        AND LessonID = @LessonID
+        AND ModuleNo = @ModuleNo
+        AND ModuleTitle = @ModuleTitle
           `);
 
-    res.status(201).send({ message: "Lesson added successfully", result });
+    res.status(201).send({ message: "Lessons added successfully", result });
 
     // res.status(201).send({ message: "Lesson added successfully", infoList });
   } catch (error) {
