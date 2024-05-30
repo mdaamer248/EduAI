@@ -327,7 +327,7 @@ router.post("/syllabus/outline/module", async (req, res) => {
   }
 });
 
-/// Adding Outline Module
+/// Adding Outline Modules lesson
 router.post("/syllabus/outline/module/lesson", async (req, res) => {
   try {
     const {
@@ -349,10 +349,14 @@ router.post("/syllabus/outline/module/lesson", async (req, res) => {
       .input("ModuleNo", Int, ModuleNo)
       .input("ModuleTitle", NVarChar, ModuleTitle)
       .input("infoList", NVarChar, infoList).query(`
-              INSERT INTO admin_syllabusLesson (SyllabusID, displayGroup, LessonID, ModuleNo, ModuleTitle, infoList)
-              VALUES (@SyllabusID, @displayGroup, @LessonID, @ModuleNo, @ModuleTitle, @infoList)
-          `);
-
+        UPDATE admin_syllabusLesson
+        SET infoList = @infoList
+        WHERE SyllabusID = @SyllabusID
+        AND displayGroup = @displayGroup
+        AND LessonID = @LessonID
+        AND ModuleNo = @ModuleNo
+        AND ModuleTitle = @ModuleTitle
+    `);
     res.status(201).send({ message: "Module added successfully", result });
   } catch (error) {
     console.error("Error creating lesson:", error);
