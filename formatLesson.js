@@ -41,3 +41,26 @@ export function formatLessons(data) {
 
   return formattedLesson;
 }
+
+export function formatLessonsForModule(data) {
+  const lessons = data;
+  const formattedLesson = lessons
+    .map((lesson) => {
+      const lessonString = [
+        lesson.lessonNo,
+        `##${lesson.lessonId}`,
+        `##${lesson.lessonNo}`,
+        `##${lesson.lessonTitle}`,
+        `##${lesson.lessonDescription}`,
+        `##${lesson.lessonIsStudent ? "checked" : ""}`,
+        `##${lesson.lessonIsInstructor ? "checked" : ""}`,
+        `##${lesson.lessonIsDeveloper ? "checked" : ""}`,
+        `##${lesson.hideDeleteLesson}##`,
+      ].join("");
+
+      return lessonString + "@@@@@@@@@@@@@@@@@@@@@@@@@@@@";
+    })
+    .join("");
+
+  return formattedLesson;
+}

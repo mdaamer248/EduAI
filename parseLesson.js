@@ -14,8 +14,10 @@ export const parseLessonData = (data) => {
     const hideDeleteLesson = lessons[i + 7];
 
     const lessonPlanPart = lessons[i + 8];
+    console.log({ lessonPlanPart });
 
     const lessonPlans = lessonPlanPart?.split("@@").slice(1);
+    console.log({ lessonPlans });
 
     const formattedLessonPlan = [];
 
@@ -33,7 +35,9 @@ export const parseLessonData = (data) => {
       const lessonPlanIsStudent = lessonPlans[j + 10];
       const lessonPlanIsInstructor = lessonPlans[j + 11];
       const lessonPlanIsDeveloper = lessonPlans[j + 12];
-      const hideDeleteLPlan = lessonPlans[j + 13].replace(/hide\d*/, "hide");
+      const hideDeleteLPlan = lessonPlans[j + 13]?.includes("hide")
+        ? "hide"
+        : "";
 
       const parsedLessonData = {
         lessonPlanId,
