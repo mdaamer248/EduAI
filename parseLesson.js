@@ -1,9 +1,9 @@
 export const parseLessonData = (data) => {
-  const lessons = data.split("##").slice(1);
+  const lessons = data?.split("##").slice(1);
   const result = [];
 
   let i = 0;
-  while (i < lessons.length) {
+  while (i < lessons?.length) {
     const lessonId = lessons[i];
     const lessonNo = lessons[i + 1];
     const lessonTitle = lessons[i + 2];
