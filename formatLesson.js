@@ -1,3 +1,5 @@
+import { parseSubModules } from "./parseLesson.js";
+
 export function formatLessons(data) {
   const lessons = data;
   const formattedLesson = lessons
@@ -63,4 +65,16 @@ export function formatLessonsForModule(data) {
     .join("");
 
   return formattedLesson;
+}
+
+export function formatSubModules(subModule, existingSubModules) {
+  let infoList;
+  if (!existingSubModules) {
+    infoList = formatLessonsForModule([subModule]);
+  } else {
+    const subModuleData = parseSubModules(existingSubModules);
+    subModuleData.push(subModule);
+    infoList = formatLessonsForModule(subModuleData);
+  }
+  return infoList;
 }

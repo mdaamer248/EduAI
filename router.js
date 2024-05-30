@@ -1,7 +1,11 @@
 import { Router } from "express";
 import { dbConnect } from "./Database/database.js";
 import { parseLessonData, parseOutLine } from "./parseLesson.js";
-import { formatLessons, formatLessonsForModule } from "./formatLesson.js";
+import {
+  formatLessons,
+  formatLessonsForModule,
+  formatSubModules,
+} from "./formatLesson.js";
 import pkg from "mssql";
 const { Int, SmallInt, NVarChar, VarChar, Decimal, SmallDateTime } = pkg;
 
@@ -56,6 +60,48 @@ router.get("/syllabus/notes/:courseId", async (req, res) => {
     res
       .status(500)
       .json({ message: "Error retrieving notes", error: err.message });
+  }
+});
+
+// Get Module of the Course
+router.get("/get/module/:moduleNo/:courseId", async (req, res) => {
+  try {
+    const courseId = req.params.courseId;
+    const moduleNo = req.params.moduleNo;
+
+    // Execute the query using the connection pool
+    const result = await pool
+      .request()
+      .input("courseId", Int, courseId)
+      .input("moduleNo", Int, moduleNo)
+
+      .query(
+        "SELECT * FROM admin_syllabusLesson WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+      );
+
+    const formattedData = [];
+    if (result.recordset.length === 0) {
+      res.status(404).json({ message: "No lessons found for this course id." });
+    } else {
+      result.recordset.forEach((data) => {
+        if (data.ModuleNo && data.LessonID) {
+          formattedData.push({
+            syllabusId: data.SyllabusID,
+            displayGroup: data.displayGroup,
+            lessonId: data.LessonID,
+            moduleNo: data.ModuleNo,
+            moduleTitle: data.ModuleTitle,
+            info: parseOutLine(data.infoList),
+          });
+        }
+      });
+      res.json(formattedData);
+    }
+  } catch (err) {
+    console.error("Error retrieving lessons:", err);
+    res
+      .status(500)
+      .json({ message: "Error retrieving lessons", error: err.message });
   }
 });
 
@@ -336,10 +382,21 @@ router.post("/syllabus/outline/module/lesson", async (req, res) => {
       LessonID,
       ModuleNo,
       ModuleTitle,
-      infoListProperties,
+      subModule,
     } = req.body;
 
-    const infoList = formatLessonsForModule(infoListProperties);
+    /// Get the module first
+
+    const module = await pool
+      .request()
+      .input("SyllabusID", Int, SyllabusID)
+      .input("ModuleNo", Int, ModuleNo)
+      .query(
+        "SELECT * FROM admin_syllabusLesson WHERE SyllabusID = @SyllabusID AND ModuleNo = @ModuleNo"
+      );
+
+    const moduleData = module.recordset[0];
+    const infoList = formatSubModules(subModule, moduleData.infoList);
 
     const result = await pool
       .request()
@@ -357,7 +414,7 @@ router.post("/syllabus/outline/module/lesson", async (req, res) => {
         AND ModuleNo = @ModuleNo
         AND ModuleTitle = @ModuleTitle
     `);
-    res.status(201).send({ message: "Module added successfully", result });
+    res.status(201).send({ message: "Sub-Module added successfully", result });
   } catch (error) {
     console.error("Error creating lesson:", error);
     res

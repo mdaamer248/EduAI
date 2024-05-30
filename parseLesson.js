@@ -81,16 +81,52 @@ export const parseOutLine = (data) => {
 
   let i = 0;
   while (i < lessons?.length) {
+    const lessonId = lessons[i];
     const lessonNo = lessons[i + 1];
     const lessonTitle = lessons[i + 2];
+    const lessonDescription = lessons[i + 3];
+
     const lessonIsStudent = lessons[i + 4];
     const lessonIsInstructor = lessons[i + 5];
     const lessonIsDeveloper = lessons[i + 6];
     const hideDeleteLesson = lessons[i + 7];
 
     result.push({
+      lessonId,
       lessonNo,
       lessonTitle,
+      lessonDescription,
+      lessonIsStudent,
+      lessonIsInstructor,
+      lessonIsDeveloper,
+      hideDeleteLesson,
+    });
+
+    i += 9;
+  }
+  return result;
+};
+
+export const parseSubModules = (data) => {
+  const lessons = data?.split("##").slice(1);
+  const result = [];
+
+  let i = 0;
+  while (i < lessons?.length) {
+    const lessonId = lessons[i];
+    const lessonNo = lessons[i + 1];
+    const lessonTitle = lessons[i + 2];
+    const lessonDescription = lessons[i + 3];
+    const lessonIsStudent = lessons[i + 4];
+    const lessonIsInstructor = lessons[i + 5];
+    const lessonIsDeveloper = lessons[i + 6];
+    const hideDeleteLesson = lessons[i + 7];
+
+    result.push({
+      lessonId,
+      lessonNo,
+      lessonTitle,
+      lessonDescription,
       lessonIsStudent,
       lessonIsInstructor,
       lessonIsDeveloper,
