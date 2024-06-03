@@ -1,4 +1,4 @@
-import { parseSubModules } from "./parseLesson.js";
+import { parseLessonData, parseSubModules } from "./parseLesson.js";
 
 export function formatLessons(data) {
   const lessons = data;
@@ -77,4 +77,27 @@ export function formatSubModules(subModule, existingSubModules) {
     infoList = formatLessonsForModule(subModuleData);
   }
   return infoList;
+}
+
+export function formatLessonPlanInSubModule(
+  currentInfoList,
+  lessonId,
+  lessonNo,
+  LessonPlan
+) {
+  currentInfoList.forEach((subModule) => {
+    if (subModule.lessonId == lessonId && subModule.lessonNo == lessonNo) {
+      subModule.formattedLessonPlan.forEach((lessonPlan) => {
+        if (!lessonPlan.lessonPlanId && !lessonPlan.lessonPlanNo) {
+          subModule.formattedLessonPlan.pop();
+          subModule.formattedLessonPlan.push(LessonPlan);
+        } else {
+          subModule.formattedLessonPlan.push(LessonPlan);
+        }
+      });
+    }
+  });
+
+  const formattedInfoList = formatLessons(currentInfoList);
+  return formattedInfoList;
 }

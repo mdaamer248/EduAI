@@ -5,6 +5,7 @@ import {
   formatLessons,
   formatLessonsForModule,
   formatSubModules,
+  formatLessonPlanInSubModule,
 } from "./formatLesson.js";
 import pkg from "mssql";
 const { Int, SmallInt, NVarChar, VarChar, Decimal, SmallDateTime } = pkg;
@@ -91,7 +92,7 @@ router.get("/get/module/:moduleNo/:courseId", async (req, res) => {
             lessonId: data.LessonID,
             moduleNo: data.ModuleNo,
             moduleTitle: data.ModuleTitle,
-            info: parseOutLine(data.infoList),
+            info: parseLessonData(data.infoList),
           });
         }
       });
@@ -373,8 +374,8 @@ router.post("/syllabus/outline/module", async (req, res) => {
   }
 });
 
-/// Adding Outline Modules lesson
-router.post("/syllabus/outline/module/lesson", async (req, res) => {
+/// Adding Outline subModule inside Module
+router.post("/syllabus/outline/module/submodule", async (req, res) => {
   try {
     const {
       SyllabusID,
@@ -423,28 +424,50 @@ router.post("/syllabus/outline/module/lesson", async (req, res) => {
   }
 });
 
-// Adding Lesson plans inside module
-router.post("/syllabus/outline/module/lessonPlans", async (req, res) => {
-  try {
-    const {
-      SyllabusID,
-      displayGroup,
-      LessonID,
-      ModuleNo,
-      ModuleTitle,
-      infoListProperties,
-    } = req.body;
+// Adding Lesson plans inside subModule
+router.post(
+  "/syllabus/outline/module/submodule/lessonplan",
+  async (req, res) => {
+    try {
+      const {
+        SyllabusID,
+        displayGroup,
+        LessonID,
+        ModuleNo,
+        ModuleTitle,
+        SubModule,
+      } = req.body;
 
-    const infoList = formatLessons(infoListProperties);
+      const { lessonId, lessonNo, LessonPlan } = SubModule[0];
 
-    const result = await pool
-      .request()
-      .input("SyllabusID", Int, SyllabusID)
-      .input("displayGroup", NVarChar, displayGroup)
-      .input("LessonID", Int, LessonID)
-      .input("ModuleNo", Int, ModuleNo)
-      .input("ModuleTitle", NVarChar, ModuleTitle)
-      .input("infoList", NVarChar, infoList).query(`
+      // Get current infoList property of module
+      const moduleDetails = await pool
+        .request()
+        .input("SyllabusID", Int, SyllabusID)
+        .input("ModuleNo", Int, ModuleNo)
+
+        .query(
+          "SELECT * FROM admin_syllabusLesson WHERE SyllabusID = @SyllabusID AND ModuleNo = @ModuleNo"
+        );
+
+      const module = moduleDetails.recordset[0];
+      const currentInfoList = parseLessonData(module.infoList);
+
+      const newInfoList = formatLessonPlanInSubModule(
+        currentInfoList,
+        lessonId,
+        lessonNo,
+        LessonPlan[0]
+      );
+
+      const result = await pool
+        .request()
+        .input("SyllabusID", Int, SyllabusID)
+        .input("displayGroup", NVarChar, displayGroup)
+        .input("LessonID", Int, LessonID)
+        .input("ModuleNo", Int, ModuleNo)
+        .input("ModuleTitle", NVarChar, ModuleTitle)
+        .input("infoList", NVarChar, newInfoList).query(`
       UPDATE admin_syllabusLesson
       SET infoList = @infoList
       WHERE SyllabusID = @SyllabusID
@@ -454,16 +477,17 @@ router.post("/syllabus/outline/module/lessonPlans", async (req, res) => {
         AND ModuleTitle = @ModuleTitle
           `);
 
-    res.status(201).send({ message: "Lessons added successfully", result });
+      res.status(201).send({ message: "Lessons added successfully", result });
 
-    // res.status(201).send({ message: "Lesson added successfully", infoList });
-  } catch (error) {
-    console.error("Error creating lesson:", error);
-    res
-      .status(500)
-      .json({ message: "Error creating lesson", error: error.message });
+      // res.status(201).send({ message: "Lesson added successfully", infoList });
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      res
+        .status(500)
+        .json({ message: "Error creating lesson", error: error.message });
+    }
   }
-});
+);
 
 // Endpoint to add a record to the admin_syllabusLesson table
 router.post("/syllabus/lesson", async (req, res) => {

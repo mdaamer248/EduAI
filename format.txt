@@ -1,0 +1,24 @@
+LessonNo as sort,	
++'##' +LessonID
++'##' +LessonNo
++'##' +LessonTitle,
++'##' +LessonDescription
++'##' +LessonIsStudent=1 THEN 'checked' ELSE '' 
++'##' +LessonIsInstructor=1 THEN 'checked' ELSE '' END)
++'##' +LessonIsDeveloper=1 THEN 'checked' ELSE '' END) 
++'##' +HideDeleteLesson
++'##' (within each lesson is the following lesson plan delimited by @all )
+	'@@' +LessonPlanID
+	+'@@' +LessonPlanNo
+	+'@@' +LP.Topic
+	+'@@' +LP.TopicDescription
+	+'@@' +LP.TopicType
+	+'@@' +P.TextfileID
+	+'@@' +TextPageList
+	+'@@' +FileLocation
+	+'@@' +WebLocation
+	+'@@' +WebURL
+	+'@@' +LessonPlanIsStudent=1 THEN 'checked' ELSE '' 
+	+'@@' +LessonPlanIsInstructor=1 THEN 'checked' ELSE '' 
+	+'@@' +LessonPlanIsDeveloper=1 THEN 'checked' ELSE '' 
+	+'@@' +HideDeleteLPlan
