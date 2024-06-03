@@ -87,11 +87,11 @@ router.get("/get/module/:moduleNo/:courseId", async (req, res) => {
       result.recordset.forEach((data) => {
         if (data.ModuleNo && data.LessonID) {
           formattedData.push({
-            syllabusId: data.SyllabusID,
+            SyllabusID: data.SyllabusID,
             displayGroup: data.displayGroup,
-            lessonId: data.LessonID,
-            moduleNo: data.ModuleNo,
-            moduleTitle: data.ModuleTitle,
+            LessonID: data.LessonID,
+            ModuleNo: data.ModuleNo,
+            ModuleTitle: data.ModuleTitle,
             info: parseLessonData(data.infoList),
           });
         }
