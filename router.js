@@ -435,10 +435,10 @@ router.post(
         LessonID,
         ModuleNo,
         ModuleTitle,
-        SubModule,
+        subModule,
       } = req.body;
 
-      const { lessonId, lessonNo, LessonPlan } = SubModule[0];
+      const { lessonId, lessonNo, LessonPlan } = subModule[0];
 
       // Get current infoList property of module
       const moduleDetails = await pool
