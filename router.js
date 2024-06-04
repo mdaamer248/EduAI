@@ -8,6 +8,7 @@ import {
   formatLessonPlanInSubModule,
 } from "./formatLesson.js";
 import pkg from "mssql";
+import { updateSubModule, updateLessonPlan } from "./updateLesson.js";
 const { Int, SmallInt, NVarChar, VarChar, Decimal, SmallDateTime } = pkg;
 
 const router = Router();
@@ -534,5 +535,142 @@ router.post("/syllabus/lesson", async (req, res) => {
       .json({ message: "Error creating lesson", error: error.message });
   }
 });
+
+//// Update Endpoints
+// Updating Module Title
+router.put("/update/module/:courseId/:moduleNo", async (req, res) => {
+  try {
+    const courseId = req.params.courseId;
+    const moduleNo = req.params.moduleNo;
+
+    const newModuleTitle = req.body.newModuleTitle;
+
+    // Execute the query using the connection pool
+    const result = await pool
+      .request()
+      .input("courseId", Int, courseId)
+      .input("moduleNo", Int, moduleNo)
+      .query(
+        "SELECT * FROM admin_syllabusLesson WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+      );
+
+    if (!result.recordset[0])
+      throw new Error("Invalid module number or course id.");
+
+    const updatedResult = await pool
+      .request()
+      .input("courseId", Int, courseId)
+      .input("moduleNo", Int, moduleNo)
+      .input("newModuleTitle", NVarChar, newModuleTitle)
+      .query(
+        "UPDATE admin_syllabusLesson SET ModuleTitle = @newModuleTitle WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+      );
+
+    if (!updatedResult.rowsAffected[0])
+      throw new Error("Error while updating the module record.");
+
+    res.status(200).send({ message: "Module title updated successfully." });
+  } catch (err) {
+    console.error("Error Updating Module:", err);
+    res
+      .status(500)
+      .json({ message: "Error Updating Module.", error: err.message });
+  }
+});
+
+// Updating Sub Module
+router.put(
+  "/update/subModule/:courseId/:moduleNo/:lessonNo",
+  async (req, res) => {
+    try {
+      const { courseId, moduleNo, lessonNo } = req.params;
+
+      // Execute the query using the connection pool
+      const result = await pool
+        .request()
+        .input("courseId", Int, courseId)
+        .input("moduleNo", Int, moduleNo)
+        .query(
+          "SELECT * FROM admin_syllabusLesson WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+        );
+
+      if (!result.recordset[0])
+        throw new Error("Invalid module number or course id.");
+
+      const updatedInfoList = updateSubModule(
+        result.recordset[0].infoList,
+        lessonNo,
+        req.body
+      );
+
+      const updatedResult = await pool
+        .request()
+        .input("courseId", Int, courseId)
+        .input("moduleNo", Int, moduleNo)
+        .input("updatedInfoList", NVarChar, updatedInfoList)
+        .query(
+          "UPDATE admin_syllabusLesson SET infoList = @updatedInfoList WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+        );
+
+      if (!updatedResult.rowsAffected[0])
+        throw new Error("Error while updating the module record.");
+
+      res.status(200).send({ message: "Sub Module updated successfully." });
+    } catch (err) {
+      console.error("Error Updating Sub Module:", err);
+      res
+        .status(500)
+        .json({ message: "Error Updating Sub Module.", error: err.message });
+    }
+  }
+);
+
+// Updating Lesson Plan
+router.put(
+  "/update/lessonPlan/:courseId/:moduleNo/:lessonNo/:lessonPlanNo",
+  async (req, res) => {
+    try {
+      const { courseId, moduleNo, lessonNo, lessonPlanNo } = req.params;
+
+      // Execute the query using the connection pool
+      const result = await pool
+        .request()
+        .input("courseId", Int, courseId)
+        .input("moduleNo", Int, moduleNo)
+        .query(
+          "SELECT * FROM admin_syllabusLesson WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+        );
+
+      if (!result.recordset[0])
+        throw new Error("Invalid module number or course id.");
+
+      const updatedInfoList = updateLessonPlan(
+        result.recordset[0].infoList,
+        lessonNo,
+        lessonPlanNo,
+        req.body
+      );
+
+      const updatedResult = await pool
+        .request()
+        .input("courseId", Int, courseId)
+        .input("moduleNo", Int, moduleNo)
+        .input("updatedInfoList", NVarChar, updatedInfoList)
+        .query(
+          "UPDATE admin_syllabusLesson SET infoList = @updatedInfoList WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+        );
+
+      if (!updatedResult.rowsAffected[0])
+        throw new Error("Error while updating the module record.");
+
+      res.status(200).send({ message: "Lesson plan updated successfully." });
+    } catch (err) {
+      console.error("Error Updating Lesson Plan:", err);
+      res
+        .status(500)
+        .json({ message: "Error Updating Lesson Plan.", error: err.message });
+    }
+  }
+);
 
 export const courseRouter = router;
