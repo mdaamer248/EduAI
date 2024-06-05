@@ -9,6 +9,7 @@ import {
 } from "./formatLesson.js";
 import pkg from "mssql";
 import { updateSubModule, updateLessonPlan } from "./updateLesson.js";
+import { deleteLessonPlan, deleteSubModule } from "./deleteLesson.js";
 const { Int, SmallInt, NVarChar, VarChar, Decimal, SmallDateTime } = pkg;
 
 const router = Router();
@@ -669,6 +670,128 @@ router.put(
       res
         .status(500)
         .json({ message: "Error Updating Lesson Plan.", error: err.message });
+    }
+  }
+);
+
+////// Deleting Section
+// Deleting Module
+// Get Module of the Course
+router.delete("/delete/module/:courseId/:moduleNo", async (req, res) => {
+  try {
+    const courseId = req.params.courseId;
+    const moduleNo = req.params.moduleNo;
+
+    // Execute the query using the connection pool
+    const result = await pool
+      .request()
+      .input("courseId", Int, courseId)
+      .input("moduleNo", Int, moduleNo)
+
+      .query(
+        "DELETE FROM admin_syllabusLesson WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+      );
+
+    res.status(200).send({ message: "Module record deleted sucessfully." });
+  } catch (err) {
+    console.error("Error Deleting Module:", err);
+    res
+      .status(500)
+      .json({ message: "Error deleting moduel", error: err.message });
+  }
+});
+
+// Deleting Sub Module
+router.delete(
+  "/delete/subModule/:courseId/:moduleNo/:lessonNo",
+  async (req, res) => {
+    try {
+      const { courseId, moduleNo, lessonNo } = req.params;
+
+      // Execute the query using the connection pool
+      const result = await pool
+        .request()
+        .input("courseId", Int, courseId)
+        .input("moduleNo", Int, moduleNo)
+        .query(
+          "SELECT * FROM admin_syllabusLesson WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+        );
+
+      if (!result.recordset[0])
+        throw new Error("Invalid module number or course id.");
+
+      const updatedInfoList = deleteSubModule(
+        result.recordset[0].infoList,
+        lessonNo,
+        req.body
+      );
+
+      const updatedResult = await pool
+        .request()
+        .input("courseId", Int, courseId)
+        .input("moduleNo", Int, moduleNo)
+        .input("updatedInfoList", NVarChar, updatedInfoList)
+        .query(
+          "UPDATE admin_syllabusLesson SET infoList = @updatedInfoList WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+        );
+
+      if (!updatedResult.rowsAffected[0])
+        throw new Error("Error while updating the module record.");
+
+      res.status(200).send({ message: "Sub Module deleted successfully." });
+    } catch (err) {
+      console.error("Error Updating Sub Module:", err);
+      res
+        .status(500)
+        .json({ message: "Error Deleting Sub Module.", error: err.message });
+    }
+  }
+);
+
+// Deleting Lesson Plan
+router.delete(
+  "/delete/lessonPlan/:courseId/:moduleNo/:lessonNo/:lessonPlanNo",
+  async (req, res) => {
+    try {
+      const { courseId, moduleNo, lessonNo, lessonPlanNo } = req.params;
+
+      // Execute the query using the connection pool
+      const result = await pool
+        .request()
+        .input("courseId", Int, courseId)
+        .input("moduleNo", Int, moduleNo)
+        .query(
+          "SELECT * FROM admin_syllabusLesson WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+        );
+
+      if (!result.recordset[0])
+        throw new Error("Invalid module number or course id.");
+
+      const updatedInfoList = deleteLessonPlan(
+        result.recordset[0].infoList,
+        lessonNo,
+        lessonPlanNo,
+        req.body
+      );
+
+      const updatedResult = await pool
+        .request()
+        .input("courseId", Int, courseId)
+        .input("moduleNo", Int, moduleNo)
+        .input("updatedInfoList", NVarChar, updatedInfoList)
+        .query(
+          "UPDATE admin_syllabusLesson SET infoList = @updatedInfoList WHERE SyllabusID = @courseId AND ModuleNo = @moduleNo"
+        );
+
+      if (!updatedResult.rowsAffected[0])
+        throw new Error("Error while updating the module record.");
+
+      res.status(200).send({ message: "Lesson plan deleted successfully." });
+    } catch (err) {
+      console.error("Error Deleting Lesson Plan:", err);
+      res
+        .status(500)
+        .json({ message: "Error Deleting Lesson Plan.", error: err.message });
     }
   }
 );
