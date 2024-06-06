@@ -404,18 +404,12 @@ router.post("/syllabus/outline/module/submodule", async (req, res) => {
     const result = await pool
       .request()
       .input("SyllabusID", Int, SyllabusID)
-      .input("displayGroup", NVarChar, displayGroup)
-      .input("LessonID", Int, LessonID)
       .input("ModuleNo", Int, ModuleNo)
-      .input("ModuleTitle", NVarChar, ModuleTitle)
       .input("infoList", NVarChar, infoList).query(`
         UPDATE admin_syllabusLesson
         SET infoList = @infoList
         WHERE SyllabusID = @SyllabusID
-        AND displayGroup = @displayGroup
-        AND LessonID = @LessonID
-        AND ModuleNo = @ModuleNo
-        AND ModuleTitle = @ModuleTitle
+        AND ModuleNo = @ModuleNo  
     `);
     res.status(201).send({ message: "Sub-Module added successfully", result });
   } catch (error) {
