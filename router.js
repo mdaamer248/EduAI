@@ -170,6 +170,8 @@ router.get("/get/all/lessons/:courseId", async (req, res) => {
           });
         }
       });
+
+      formattedData.sort((a, b) => a.ModuleNo - b.ModuleNo);
       res.json(formattedData);
     }
   } catch (err) {
