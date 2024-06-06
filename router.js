@@ -461,18 +461,14 @@ router.post(
       const result = await pool
         .request()
         .input("SyllabusID", Int, SyllabusID)
-        .input("displayGroup", NVarChar, displayGroup)
         .input("LessonID", Int, LessonID)
         .input("ModuleNo", Int, ModuleNo)
-        .input("ModuleTitle", NVarChar, ModuleTitle)
         .input("infoList", NVarChar, newInfoList).query(`
       UPDATE admin_syllabusLesson
       SET infoList = @infoList
       WHERE SyllabusID = @SyllabusID
-        AND displayGroup = @displayGroup
         AND LessonID = @LessonID
         AND ModuleNo = @ModuleNo
-        AND ModuleTitle = @ModuleTitle
           `);
 
       res.status(201).send({ message: "Lessons added successfully", result });
